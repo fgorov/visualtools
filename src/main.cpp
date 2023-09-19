@@ -19,22 +19,27 @@ int main(int argc, char** argv)
     std::cout << "Origin Y: ";
     std::cin >> origin.y;
 
-    /*double angle;
+    double angle;
     std::cout << "Angle: ";
     std::cin >> angle;
     
     double length;
     std::cout << "Length: ";
-    std::cin >> length;*/
+    std::cin >> length;
 
     float radius;
     std::cout << "Radius: ";
     std::cin >> radius;
 
+    shape_alpha s_a;
+    s_a = draw_circle_gradient(origin, radius, range);
     //layer l = generate_filled_triangle(origin, angle, length, radius);
     //layer l = generate_gradient_triangle(origin, angle, length, radius, range);
 
-    layer l = draw_filled_circle(origin, radius);
+    //layer l = draw_circle_gradient(origin, radius, range);
+
+    layer l = {};
+    write_shape_alpha_to_layer(&s_a, &l);
 
     print_break();
 

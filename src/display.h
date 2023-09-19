@@ -24,6 +24,7 @@ char value_to_ascii(double value);
 // point fills
 void fill_layer_point(layer *l, point pt);
 void fill_display_point(point pt);
+void add_layer_point(layer *l, point_alpha pt);
 
 // shape fills
 void fill_layer_quad(layer *l, quad q);

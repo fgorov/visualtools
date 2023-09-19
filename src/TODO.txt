@@ -1,0 +1,7 @@
+DONE
+add shape_alpha struct for gradient generation DONE
+convert all gradient generators to shape alpha instead of layer / void DONE
+fix circle generation gradient, works fine for filled shape but something in the conversion to a gradient ruins it all. DONE, forgot to return lmao
+
+OUTSTANDING
+circle generation is diamondesque, how can i fix this? reference middle-point algorithm again. i must be missing something.

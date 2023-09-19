@@ -41,19 +41,17 @@ void fill_layer_point(layer *l, point pt)
     l->at(px.y).at(px.x) = 1.0;
 }
 
-void fill_layer_quad(layer *l, quad q)
+void add_layer_point(layer *l, point_alpha pt)
 {
-    fill_layer_point(l, q.a);
-    fill_layer_point(l, q.b);
-    fill_layer_point(l, q.c);
-    fill_layer_point(l, q.d);
+    pixel px = point_to_pixel(clamp_point((point){pt.x, pt.y}));
+        l->at(px.y).at(px.x) += pt.alpha;
 }
 
 void render_layer(layer l)
 {
-    for(int y = 0; y < display_bounds.y; y++)
+    for(int y = 0; y < display_height; y++)
     {
-        for(int x = 0; x < display_bounds.x; x++)
+        for(int x = 0; x < display_width; x++)
         {
             display[y][x] += l[y][x];
         }
@@ -62,7 +60,7 @@ void render_layer(layer l)
 
 void print_break()
 {
-    for(int i = 0; i < display_bounds.x; i++) std::cout << " - ";
+    for(int i = 0; i < display_width; i++) std::cout << " - ";
     std::cout << std::endl;
 }
 
@@ -80,7 +78,7 @@ void print_ascii_display()
 {
     for(int y = 0; y < display_height; y++) {
         for(int x = 0; x < display_width; x++) {
-            std::cout << ascii_display.at(y).at(x);
+            std::cout << ascii_display.at(y).at(x) << ' ';
         }
         std::cout << std::endl;
     }

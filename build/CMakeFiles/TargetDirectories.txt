@@ -1,0 +1,3 @@
+/Users/finngorov/Documents/Code/VisualTools/visualtools/build/CMakeFiles/visualtools.dir
+/Users/finngorov/Documents/Code/VisualTools/visualtools/build/CMakeFiles/edit_cache.dir
+/Users/finngorov/Documents/Code/VisualTools/visualtools/build/CMakeFiles/rebuild_cache.dir

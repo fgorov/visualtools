@@ -1,9 +1,73 @@
 #include <iostream>
+#include <vector>
 #include "shapes.h"
 #include "display.h"
 #include "coords.h"
 
-void draw_line(layer *l, point one, point two)
+// general
+// write functions
+void write_point_to_shape(shape *s, point a)
+{
+    s->points.push_back(a);
+}
+template<std::size_t size_unknown>
+void write_array_to_shape(shape *s, std::array<point, size_unknown> array)
+{
+    for(int i = 0; i < array.size(); i++)
+        s->points.push_back(array.at(i));
+}
+void write_shape_to_layer(shape *s, layer *l)
+{
+    size_t point_count = s->points.size();
+    for(int i = 0; i < point_count; i++)
+        fill_layer_point(l, s->points.at(i));
+}
+void write_shape_alpha_to_layer(shape_alpha *s_a, layer *l)
+{
+    size_t point_count = s_a->points.size();
+    for(int i = 0; i < point_count; i++)
+        add_layer_point(l, s_a->points.at(i));
+}
+
+void write_layer_to_shape(layer *l, shape *s)
+{
+    for(int y = 0; y < display_bounds.y; y++)
+    {
+        for(int x = 0; x < display_bounds.x; x++)
+        {
+            if(l->at(y).at(x) != 0.0)
+                s->points.push_back((point){x, y});
+        }
+    }
+}
+
+// conversions
+
+point_alpha point_to_point_alpha(point p)
+{
+    return (point_alpha){p.x, p.y, 1.0};
+}
+
+shape_alpha shape_to_shape_alpha(shape *s)
+{
+    shape_alpha s_a;
+    size_t s_point_count = s->points.size();
+    s_a.origin = s->origin;
+    for(int i = 0; i < s_point_count; i++)
+        s_a.points.push_back(point_to_point_alpha(s->points.at(i)));
+    return s_a;
+}
+
+// read functions
+void read_shape(shape s)
+{
+    size_t points = s.points.size();
+    for(int i = 0; i < points; i++)
+        print_point(s.points.at(i), "shape point");
+}
+
+// line / fill functions
+void draw_line(shape *s, point one, point two)
 {   
     point d = { two.x - one.x , two.y - one.y };
     point absd = {abs(d.x), abs(d.y)};
@@ -25,7 +89,7 @@ void draw_line(layer *l, point one, point two)
                 else { pt.y += 1;}
                 _d = _d + ( 2 * absd.y - 2 * absd.x); 
             }
-            fill_layer_point(l, pt);
+            s->points.push_back(pt);
         }
     }
     else { 
@@ -44,12 +108,10 @@ void draw_line(layer *l, point one, point two)
                 else {pt.x += 1;}
                 _d = _d + ( 2 * absd.x) - (2 * absd.y);
             }
-            fill_layer_point(l, pt);
+            s->points.push_back(pt);
         }
     }
 }
-
-// fills enclosed shape in layer l
 void fill_primitive(layer *l) 
 {
     // for each y, get leftmost and rightmost x value of 1
@@ -72,104 +134,97 @@ void fill_primitive(layer *l)
         }
     }
 }
-
-
-
-// bounding boxes
-box get_tri_bounding_box(triangle tri)
+void fill_shape(shape *s)
 {
-    box bb;
-    bb.tl = (point){std::min(tri.origin.x, std::min(tri.positive.x, tri.negative.x)), std::min(tri.origin.y, std::min(tri.positive.y, tri.negative.y))};
-    bb.br = (point){std::max(tri.origin.x, std::max(tri.positive.x, tri.negative.x)), std::max(tri.origin.y, std::max(tri.positive.y, tri.negative.y))};
+    // write to layer and do it that way :(
+    layer buffer = {};
+    write_shape_to_layer(s, &buffer);
+    fill_primitive(&buffer);
+    write_layer_to_shape(&buffer, s);
+}
+
+// everything bounding boxes
+line get_bounding_box(shape *s)
+{
+    line bounding_box = {(point){s->points.at(0).x, s->points.at(0).y}, (point){s->points.at(0).x, s->points.at(0).y}};
+    size_t vector_size = s->points.size();
+    if(vector_size > 1)
+    {
+        for(int i = 1; i < vector_size; i++)
+        {
+            point pt = s->points.at(i);
+            if(pt.x < bounding_box[0].x) bounding_box[0].x = pt.x;
+            if(pt.x > bounding_box[1].x) bounding_box[1].x = pt.x;
+            if(pt.y < bounding_box[0].y) bounding_box[0].y = pt.y;
+            if(pt.y > bounding_box[1].y) bounding_box[1].y = pt.y;
+        }
+    }
+    return bounding_box;
+}
+line get_visible_bounding_box(line bb)
+{
+    bb[0].x = bb[0].x < 0.0 ? 0.0 : bb[0].x > display_bounds.x ? display_bounds.x : bb[0].x;
+    bb[0].y = bb[0].y < 0.0 ? 0.0 : bb[0].y > display_bounds.x ? display_bounds.y : bb[0].y;
+    bb[1].x = bb[1].x < 0.0 ? 0.0 : bb[1].x > display_bounds.x ? display_bounds.x : bb[1].x;
+    bb[1].y = bb[1].y < 0.0 ? 0.0 : bb[1].y > display_bounds.y ? display_bounds.y : bb[1].y;
     return bb;
 }
-
-box get_visible_bb(box bb)
+point get_bounding_box_size(line bb)
 {
-    bb.tl.x = bb.tl.x < 0.0 ? 0.0 : bb.tl.x > display_bounds.x ? display_bounds.x : bb.tl.x;
-    bb.tl.y = bb.tl.y < 0.0 ? 0.0 : bb.tl.y > display_bounds.x ? display_bounds.y : bb.tl.y;
-    bb.br.x = bb.br.x < 0.0 ? 0.0 : bb.br.x > display_bounds.x ? display_bounds.x : bb.br.x;
-    bb.br.y = bb.br.y < 0.0 ? 0.0 : bb.br.y > display_bounds.y ? display_bounds.y : bb.br.y;
-    return bb;
+    return (point){(bb[1].x - bb[0].x), (bb[1].y - bb[0].y)};
 }
-
-point get_bounding_box_size(box bb)
-{
-    return (point){(bb.br.x - bb.tl.x), (bb.br.y - bb.tl.y)};
-}
-
 
 // triangles
-// generates 3 points, not drawn
-triangle generate_triangle(point origin, double degrees, double length, double radius)
+void connect_triangle(shape *s)
+{
+    draw_line(s, s->points.at(0), s->points.at(1));
+    draw_line(s, s->points.at(0), s->points.at(2));
+    draw_line(s, s->points.at(1), s->points.at(2));
+}
+shape draw_triangle(point origin, double degrees, double length, double radius)
 {
     double radians = degrees * radian;
-
-    triangle tri;
-    tri.origin = origin;
-
-    point positive = {origin.x + cos(radians + radius) * length, origin.y + sin(radians + radius) * length};
-    tri.positive = positive;   
-
-    point negative = {origin.x + cos(radians - radius) * length, origin.y + sin(radians - radius) * length};
-    tri.negative = negative;
-
-    return tri;
+    shape s;
+    s.origin = origin;
+    s.points.push_back(origin);
+    s.points.push_back((point){origin.x + cos(radians + radius) * length, origin.y + sin(radians + radius) * length});
+    s.points.push_back((point){origin.x + cos(radians - radius) * length, origin.y + sin(radians - radius) * length});
+    return s;
 }
-
-// connects tri on a layer, presumes has already been drawn to layer. may be better to make it a layer function as opposed to void?
-void connect_triangle(layer *l, triangle tri)
+shape draw_triangle_connected(point origin, double degrees, double length, double radius)
 {
-    fill_layer_point(l, tri.origin);
-    fill_layer_point(l, tri.positive);
-    fill_layer_point(l, tri.negative);
-    draw_line(l, tri.origin, tri.positive);
-    draw_line(l, tri.origin, tri.negative);
-    draw_line(l, tri.positive, tri.negative);
+    shape s = draw_triangle(origin, degrees, length, radius);
+    connect_triangle(&s);
+    return s;
 }
-
-layer draw_triangle(point origin, double degrees, double length, double radius)
+shape draw_triangle_filled(point origin, double degrees, double length, double radius)
 {
-    layer tri_layer = {};
-    triangle tri = generate_triangle(origin, degrees, length, radius);
-    connect_triangle(&tri_layer, tri);
-    return tri_layer;
+    shape s = draw_triangle_connected(origin, degrees, length, radius);
+    fill_shape(&s);
+    return s;
 }
 
-layer draw_triangle_filled(point origin, double degrees, double length, double radius)
-{
-    layer tri_layer = draw_triangle(origin, degrees, length, radius);
-    fill_primitive(&tri_layer);
-    return tri_layer;
-}
-
+// circles
 quad mirror_quad(point origin, point offset)
 {
     quad mirrored;
     // plus both
-    mirrored.a = add_points(origin, offset);
+    mirrored[0] = add_points(origin, offset);
     // minus x plus y
-    mirrored.b = (point){origin.x - offset.x, origin.y + offset.y};
+    mirrored[1] = (point){origin.x - offset.x, origin.y + offset.y};
     // mins y plus x
-    mirrored.c = (point){origin.x + offset.x, origin.y - offset.y};
+    mirrored[2]= (point){origin.x + offset.x, origin.y - offset.y};
     // minus both
-    mirrored.d = subtract_points(origin, offset);
-/*
-    fill_layer_point(&l, (point){x + origin.x, y + origin.y});
-    fill_layer_point(&l, (point){-x + origin.x, y + origin.y});
-    fill_layer_point(&l, (point){x + origin.x, -y + origin.y});
-    fill_layer_point(&l, (point){-x + origin.x, -y + origin.y});
-    */
+    mirrored[3] = subtract_points(origin, offset);
     return mirrored;
 }
-
-layer draw_circle(point origin, float r)
+shape draw_circle(point origin, float r)
 {
-    layer l = {};
+    shape circle = {};
     float P = 1 - r;
     for(pixel px = {r, 0}; px.x > px.y; px.y++)
     {
-        fill_layer_quad(&l, mirror_quad(origin, (point){px.x, px.y}));
+        write_array_to_shape(&circle, mirror_quad(origin, (point){px.x, px.y}));
 
         P = P <= 0 ? P + (2 * px.y) + 1 : P + (2 * px.y) - (2 * px.x) + 1;
         if( P > 0) px.x--;
@@ -177,15 +232,14 @@ layer draw_circle(point origin, float r)
 
         if (px.x != px.y)
         {
-            fill_layer_quad(&l, mirror_quad(origin, (point){px.y, px.x}));
+            write_array_to_shape(&circle, mirror_quad(origin, (point){px.y, px.x}));
         }
     }
-    return l;
+    return circle;
 }
-
-layer draw_circle_filled(point origin, float r)
+shape draw_circle_filled(point origin, float r)
 {
-    layer l = draw_circle(origin, r);
-    fill_primitive(&l);
-    return l;
+    shape circle_filled = draw_circle(origin, r);
+    fill_shape(&circle_filled);
+    return circle_filled;
 }

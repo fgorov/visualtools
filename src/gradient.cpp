@@ -57,28 +57,44 @@ layer draw_square_gradient(point origin, point end, greyscale_range range, doubl
 
 layer draw_triangle_gradient(point origin, double degrees, double length, double radius, greyscale_range range)
 {
-    layer tri_layer = {};
+    layer l = {};
 
     // generates a triangle box. finds it bounding box's real size & visible size.
-    triangle tri = generate_triangle(origin, degrees, length, radius);
-    box bb = get_tri_bounding_box(tri);
-    point bb_size = abs_point(get_bounding_box_size(bb));
-    box visible_bb = get_visible_bb(get_tri_bounding_box(tri));
-
-    connect_triangle(&tri_layer, tri);
-    fill_primitive(&tri_layer);
+    shape t = draw_triangle_filled(origin, degrees, length, radius);
+    line bb = get_bounding_box(&t);
+    point bb_size = get_bounding_box_size(bb);
 
     // loops over shape and generates a gradient value for each filled point. this should be a function
-    for(int y = visible_bb.tl.y; y < visible_bb.br.y; y++)
+    size_t t_size = t.points.size();
+    for(int i = 0; i < t_size; i++)
     {
-        for(int x = visible_bb.tl.x; x < visible_bb.br.x; x++)
-        {
-            if(tri_layer.at(y).at(x) == 1.0)
-            {
-                tri_layer.at(y).at(x) = gradient_value((point){x, y}, bb_size, range, degrees);
-            }
-        }
+        point pt = t.points.at(i);
+        l.at(pt.y).at(pt.x) = gradient_value(pt, bb_size, range, degrees);
     }
 
-    return tri_layer;
+    return l;
+}
+
+double generate_radial_gradient_value(point origin, point pt, double radius, greyscale_range range)
+{
+    // distance between point and origin
+    double distance = ((abs(origin.x - pt.x) + abs(origin.y - pt.y)) / 2);
+    double brightness = distance / radius;
+    return brightness * (range.end - range.start) + range.start;
+}
+
+shape_alpha draw_circle_gradient(point origin, double radius, greyscale_range range)
+{
+    shape base_shape = draw_circle_filled(origin, radius);
+    point s_bounding_box_size = get_bounding_box_size(get_bounding_box(&base_shape));
+    size_t point_count = base_shape.points.size();
+    shape_alpha alpha_shape = shape_to_shape_alpha(&base_shape);
+
+    for(int i = 0; i < point_count; i++)
+    {
+        point pt = base_shape.points.at(i);
+        alpha_shape.points.at(i).alpha = generate_radial_gradient_value(origin, pt, radius, range);
+    }
+
+    return alpha_shape;
 }

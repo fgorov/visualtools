@@ -46,6 +46,8 @@ void write_shape_alpha_to_layer(shape_alpha *s_a, layer *l);
 void write_layer_to_shape(layer *l, shape *s);
 
 // conversions
+point_alpha point_to_point_alpha(point p);
+point point_alpha_to_point(point_alpha p_a);
 shape_alpha shape_to_shape_alpha(shape *s);
 
 // read functions

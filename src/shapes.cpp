@@ -28,7 +28,6 @@ void write_shape_alpha_to_layer(shape_alpha *s_a, layer *l)
     for(int i = 0; i < point_count; i++)
         add_layer_point(l, s_a->points.at(i));
 }
-
 void write_layer_to_shape(layer *l, shape *s)
 {
     for(int y = 0; y < display_bounds.y; y++)
@@ -47,7 +46,10 @@ point_alpha point_to_point_alpha(point p)
 {
     return (point_alpha){p.x, p.y, 1.0};
 }
-
+point point_alpha_to_point(point_alpha p_a)
+{
+    return (point){p_a.x, p_a.y};
+}
 shape_alpha shape_to_shape_alpha(shape *s)
 {
     shape_alpha s_a;

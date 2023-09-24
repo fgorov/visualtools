@@ -32,9 +32,10 @@ int main(int argc, char** argv)
     std::cin >> radius;
 
     shape_alpha s_a;
-    s_a = draw_circle_gradient(origin, radius, range);
+    //s_a = draw_circle_gradient(origin, radius, range);
     //layer l = generate_filled_triangle(origin, angle, length, radius);
-    //layer l = generate_gradient_triangle(origin, angle, length, radius, range);
+    //s_a = draw_triangle_gradient(origin, angle, length, radius, range);
+    s_a = draw_square_gradient(origin, (point){origin.x + length, origin.y + length}, angle, range);
 
     //layer l = draw_circle_gradient(origin, radius, range);
 
